@@ -10,8 +10,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      - name: Get latest tag
+        id: get_tag
+        run: echo ::set-output name=TAG_VERSION::v1.0.0
       - name: Build and push the image
         run: |
           docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
-          docker build . -t ghcr.io/ulrich-sun/hello-world-sun:${{ github.ref_name }} 
-          docker push ghcr.io/ulrich-sun/hello-world-sun:${{ github.ref_name }} 
+          docker build . -t ghcr.io/ulrich-sun/hello-world-sun:${{ steps.get_tag.outputs.TAG_VERSION }} 
+          docker push ghcr.io/ulrich-sun/hello-world-sun:${{ steps.get_tag.outputs.TAG_VERSION }}
+          echo $(( $(echo '${{ steps.get_tag.outputs.TAG_VERSION }}' | tr -d 'v.') + 1 )) > new_tag.txt
+          echo ::set-output name=TAG_VERSION::v$(cat new_tag.txt).0.0
+      - name: Update tag
+        run: echo ::set-output name=TAG_VERSION::$(cat new_tag.txt).0.0
