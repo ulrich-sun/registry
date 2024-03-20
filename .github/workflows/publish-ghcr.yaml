@@ -18,7 +18,10 @@ jobs:
           docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
           docker build . -t ghcr.io/ulrich-sun/hello-world-sun:${{ steps.get_tag.outputs.TAG_VERSION }} 
           docker push ghcr.io/ulrich-sun/hello-world-sun:${{ steps.get_tag.outputs.TAG_VERSION }}
-          echo $(( $(echo '${{ steps.get_tag.outputs.TAG_VERSION }}' | tr -d 'v.') + 1 )) > new_tag.txt
-          echo ::set-output name=TAG_VERSION::v$(cat new_tag.txt).0.0
-      - name: Update tag
-        run: echo ::set-output name=TAG_VERSION::$(cat new_tag.txt).0.0
+          current_version=$(echo '${{ steps.get_tag.outputs.TAG_VERSION }}' | tr -d 'v.')
+          IFS='.' read -r major minor patch <<< "$current_version"
+          echo "$major.$minor.$((patch + 1))" > new_tag.txt
+          if [ $((patch + 1)) -eq 10 ]; then
+            echo "$major.$((minor + 1)).0" > new_tag.txt
+          fi
+          echo ::set-output name=TAG_VERSION::v$(cat new_tag.txt)
