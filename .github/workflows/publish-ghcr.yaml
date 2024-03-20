@@ -2,7 +2,9 @@ name: Build and Push
 
 on:
   push:
-    
+    branches:
+      - main  # Trigger on pushes to the main branch
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -10,8 +12,25 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Get the latest tag
+        id: latest_tag
+        run: echo ::set-output name=TAG::$(git describe --tags `git rev-list --tags --max-count=1`)
+
+      - name: Increment tag
+        id: increment_tag
+        run: echo ::set-output name=TAG::$(echo "${{ steps.latest_tag.outputs.TAG }}" | awk -F. '{$NF+=1; print $0RT}' OFS=. ORS="")
+
       - name: Build and push the image
         run: |
           docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
           docker build . -t ghcr.io/ulrich-sun/hello-world-ghcr:latest
+          docker tag ghcr.io/ulrich-sun/hello-world-ghcr:latest ghcr.io/ulrich-sun/hello-world-ghcr:${{ steps.increment_tag.outputs.TAG }}
           docker push ghcr.io/ulrich-sun/hello-world-ghcr:latest
+          docker push ghcr.io/ulrich-sun/hello-world-ghcr:${{ steps.increment_tag.outputs.TAG }}
+
+      - name: Display the updated tag
+        run: echo "The updated tag is ${{ steps.increment_tag.outputs.TAG }}"
