@@ -37,10 +37,6 @@ jobs:
       - name: login to ghcr
         run: echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
       - name: Build and push
-        if: github.event_name == 'push'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.get_tag.outputs.tags }}
-          labels: ${{ steps.get_tag.outputs.labels }}
+        run: |
+          docker build . -t ghcr.io/ulrich-sun/hello-world--ghcr:${{ steps.get_tag.outputs.tags }}
+          docker push ghcr.io/ulrich-sun/hello-world--ghcr:${{ steps.get_tag.outputs.tags }}
