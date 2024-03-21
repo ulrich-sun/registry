@@ -1,39 +1,61 @@
-name: Build and Push
+name: ci
 
 on:
+  # schedule:
+  #   - cron: "0 10 * * *"
   push:
-    
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+    branches:
+      - "**"
+    tags:
+      - "v*.*.*"
+  push:
+    branches:
+      - "main"
 
+jobs:
+  docker:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Get latest tag
-        id: get_tag
-        run: echo ::set-output name=TAG_VERSION::v1.0.0
-      - name: Cache tag
-        id: cache_tag
-        uses: actions/cache@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          path: new_tag.txt
-          key: tag-version-${{ runner.os }}
-      - name: Build and push the image
-        run: |
-          docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
-          docker build . -t ghcr.io/ulrich-sun/hello-world-sun:${{ steps.get_tag.outputs.TAG_VERSION }} 
-          docker push ghcr.io/ulrich-sun/hello-world-sun:${{ steps.get_tag.outputs.TAG_VERSION }}
-          current_version=$(echo '${{ steps.get_tag.outputs.TAG_VERSION }}' | tr -d 'v.')
-          IFS='.' read -r major minor patch <<< "$current_version"
-          echo "$major.$minor.$((patch + 1))" > new_tag.txt
-          if [ $((patch + 1)) -eq 10 ]; then
-            echo "$major.$((minor + 1)).0" > new_tag.txt
-          fi
-          echo ::set-output name=TAG_VERSION::v$(cat new_tag.txt)
-      - name: Cache updated tag
-        id: cache_updated_tag
-        uses: actions/cache@v2
+          # list of Docker images to use as base name for tags
+          images: |
+            name/app
+            ghcr.io/username/app
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        if: github.event_name != 'push'
+        uses: docker/login-action@v3
         with:
-          path: new_tag.txt
-          key: updated-tag-version-${{ runner.os }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to GHCR
+        if: github.event_name != 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
