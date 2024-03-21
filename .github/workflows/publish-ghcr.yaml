@@ -1,14 +1,14 @@
-name: ci
+name: Build and Push
 
 on:
   push:
     branches:
-      - "**"
+      - "*"
     tags:
       - "v*.*.*"
   push:
     branches:
-      - "main"
+      - "*"
 
 jobs:
   docker:
