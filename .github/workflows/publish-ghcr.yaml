@@ -2,7 +2,8 @@ name: Build and Push
 
 on:
   push:
-    
+env:
+  IMAGE_TAG: ${{ github.run_number }}
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -13,5 +14,5 @@ jobs:
       - name: Build and push the image
         run: |
           docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
-          docker build . -t ghcr.io/ulrich-sun/hello-world-ghcr:latest
-          docker push ghcr.io/ulrich-sun/hello-world-ghcr:latest
+          docker build . -t ghcr.io/ulrich-sun/hello-world-ghcr:${{ env.IMAGE_TAG }}
+          docker push ghcr.io/ulrich-sun/hello-world-ghcr:${{ env.IMAGE_TAG }}
