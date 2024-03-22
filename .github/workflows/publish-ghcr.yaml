@@ -26,5 +26,5 @@ jobs:
         run: |
           set +x
           docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/wedding:v${{ env.IMAGE_TAG }} --network=wedding-network .
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/wedding:v${{ env.IMAGE_TAG }}  .
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/wedding:v${{ env.IMAGE_TAG }}
