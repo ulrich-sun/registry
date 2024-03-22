@@ -19,17 +19,15 @@ jobs:
     - name: Login to GitHub Container Registry
       run: echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+    - name: Get latest image tag
+      id: get_tag
+      run: echo "::set-output name=TAG::v1.0.$((($(git tag --list 'v1.0.*' | cut -d '.' -f 3 | sort -n | tail -n 1) + 1)))"
+
     - name: Build and push Docker image
       run: |
-        IMAGE_TAG=v1.0.0
+        IMAGE_TAG=$TAG
         docker build -t ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:${IMAGE_TAG} .
         docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:${IMAGE_TAG}
 
-        # Increment the version tag
-        IFS='.' read -r major minor patch <<< $IMAGE_TAG
-        patch=$((patch + 1))
-        IMAGE_TAG="$major.$minor.$patch"
-        echo "::set-env name=IMAGE_TAG::$IMAGE_TAG"
-
     - name: Update version tag in workflow file
-      run: sed -i "s/v1.0.0/${{ env.IMAGE_TAG }}/g" your-workflow-file.yml
+      run: sed -i "s/v1.0.0/${{ steps.get_tag.outputs.TAG }}/g" your-workflow-file.yml
