@@ -21,11 +21,11 @@ jobs:
 
     - name: Get latest image tag
       id: get_tag
-      run: echo "::set-output name=TAG::v1.0.$((($(git tag --list 'v1.0.*' | cut -d '.' -f 3 | sort -n | tail -n 1) + 1)))"
+      run: echo "::set-output name=TAG::v1.0.$((($(git tag --list 'v1.0.*' | cut -d '.' -f 3 | sort -n | tail -n 1) + 1))"
 
     - name: Build and push Docker image
       run: |
-        TAG=v1.0.$((($(git tag --list 'v1.0.*' | cut -d '.' -f 3 | sort -n | tail -n 1) + 1))
+        TAG=$(echo "v1.0.$((($(git tag --list 'v1.0.*' | cut -d '.' -f 3 | sort -n | tail -n 1) + 1))")
         IMAGE_TAG=ghcr.io/ulrich-sun/sun:$TAG
         docker build -t $IMAGE_TAG .
         docker push $IMAGE_TAG
