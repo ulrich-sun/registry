@@ -1,34 +1,30 @@
-name: Build and Push Docker Image
+name: CI
 
 on:
   push:
-    branches:
-      - test
+    branches: [test]
+
+  workflow_dispatch:
+
+env:
+  POSTGRESQL_DB: wedding
+  POSTGRESQL_USER: postgres
+  POSTGRESQL_PASSWORD: mysecretpassword
+  JAVA_VERSION: 17
+  JAVA_DISTRIBUTION: temurin
+  IMAGE_TAG: ${{ github.run_number }} # Utilisation du numéro d'exécution du workflow comme base d'incrémentation
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Docker Login
+        run: |
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-
-    - name: Login to GitHub Container Registry
-      run: echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-    - name: Get latest image tag
-      id: get_tag
-      run: echo "::set-output name=TAG::v1.0.$((($(git tag --list 'v1.0.*' | cut -d '.' -f 3 | sort -n | tail -n 1) + 1))"
-
-    - name: Build and push Docker image
-      run: |
-        TAG=$(echo "v1.0.$((($(git tag --list 'v1.0.*' | cut -d '.' -f 3 | sort -n | tail -n 1) + 1))")
-        IMAGE_TAG=ghcr.io/ulrich-sun/sun:$TAG
-        docker build -t $IMAGE_TAG .
-        docker push $IMAGE_TAG
-
-    - name: Update version tag in workflow file
-      run: sed -i "s/v1.0.0/${{ steps.get_tag.outputs.TAG }}/g" your-workflow-file.yml
+      - uses: actions/checkout@v3
+      - name: Build and push
+        run: |
+          set +x
+          docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/wedding:v${{ env.IMAGE_TAG }} --network=wedding-network .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/wedding:v${{ env.IMAGE_TAG }}
