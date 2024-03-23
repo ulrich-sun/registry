@@ -1,0 +1,5 @@
+version: "3"
+services:
+  test:
+    container_name: test
+    image: ghcr.io/ulrich-sun/hello-world-ghcr:latest
