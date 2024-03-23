@@ -4,8 +4,8 @@ on:
   push:
 
 env:
-  IMAGE_TAG: ${{ github.ref }}
-  # IMAGE_TAG: ${{ github.run_number }}
+  #IMAGE_TAG: ${{ github.ref }}
+  IMAGE_TAG: ${{ github.run_number }}
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
