@@ -2,54 +2,32 @@ name: Build and Push
 
 on:
   push:
-    branches:
-      - "*"
     tags:
-      - "v*.*.*"
-  push:
-    branches:
-      - "*"
-
+      - '*'
+env:
+  # IMAGE_TAG: ${{ github.ref }}
+  # IMAGE_TAG: ${{ github.run_number }}
 jobs:
-  docker:
+  build-and-push:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          # list of Docker images to use as base name for tags
-          images: |
-            name/app
-            ghcr.io/username/app
-          # generate Docker tags based on the following events/attributes
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
-      - name: Login to Docker hub
-        if: github.event_name != 'push'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GHCR
-        if: github.event_name != 'push'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_PAT }}
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: ${{ github.event_name != 'push' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Get latest tag
+        id: get_tag
+        run: echo ::set-output name=TAG::$(git describe --abbrev=0 --tags)
+
+      - name: Increment tag version
+        id: increment_version
+        run: echo ::set-output name=NEW_TAG::$(echo "${{ steps.get_tag.outputs.TAG }}" | awk -F. -v OFS=. '{$NF = $NF + 1;} 1')
+
+      - name: Set new tag
+        run: git tag ${{ steps.increment_version.outputs.NEW_TAG }}
+        env: 
+          IMAGE_TAG: ${{ steps.increment_version.outputs.NEW_TAG }}
+      - name: Build and push the image
+        run: |
+          docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
+          docker build . -t ghcr.io/ulrich-sun/hello-world-ghcr:v${{ env.IMAGE_TAG }}
+          docker push ghcr.io/ulrich-sun/hello-world-ghcr:v${{ env.IMAGE_TAG }}
