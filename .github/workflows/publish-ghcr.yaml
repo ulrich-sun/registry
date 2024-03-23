@@ -34,10 +34,11 @@ jobs:
           script: |
             set +x
             echo "remove old version "
-            docker-compose -f https://raw.githubusercontent.com/ulrich-sun/registry/ulrich/docker-compose.yml stop test
+            curl -o docker-compose.yml https://raw.githubusercontent.com/ulrich-sun/registry/ulrich/docker-compose.yml
+            docker-compose -f docker-compose.yml stop test
             docker rm test || (echo "nohting to delete")
             docker rmi ghcr.io/ulrich-sun/hello-world-ghcr:latest
             docker login --username ulrich-sun --password ${{ secrets.GH_PAT }} ghcr.io
             docker pull ghcr.io/ulrich-sun/hello-world-ghcr:latest
-            docker-compose -f https://raw.githubusercontent.com/ulrich-sun/registry/ulrich/docker-compose.yml up -d test
+            docker-compose -f docker-compose.yml up -d test
 
