@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - '*'
-env:
+# env:
   # IMAGE_TAG: ${{ github.ref }}
   # IMAGE_TAG: ${{ github.run_number }}
 jobs:
