@@ -2,8 +2,7 @@ name: Build and Push
 
 on:
   push:
-    tags:
-      - '*'
+  
 # env:
   # IMAGE_TAG: ${{ github.ref }}
   # IMAGE_TAG: ${{ github.run_number }}
